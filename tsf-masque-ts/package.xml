@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+<package version="1.0">
+    <description>tsf-masque test suite</description>
+
+    <!-- @page masque-ts MASQUE Suite
+          @objective Exercise tsf-masque end to end against a real MASQUE
+                     proxy, over both QUIC backends, on the data plane and
+                     on the wire.
+
+          @par Test Groups:
+          - @ref masque-connect - bring tunnels up and move payloads through
+            them (CONNECT-UDP and connect-tcp), over quiche and msquic, with
+            the negative cases.
+          - @ref masque-onwire - prove, with TAD, that a payload sent through
+            a CONNECT-UDP tunnel actually emerges as a UDP datagram to the
+            target, and that QUIC carried it.
+
+          @par Notes:
+          - The agent must have at least one QUIC backend (quiche or msquic)
+            compiled into tsf-masque; otherwise the data-plane tests skip.
+          - The proxy and echo targets are brought up by the masque-topo
+            helper in the build image, in a network namespace joined to the
+            root namespace by a veth pair. A kernel with no network
+            namespaces skips the groups.
+    -->
+
+    <author mailto="maxim.menshikov@interpretica.io" />
+
+    <session track_conf="silent">
+        <prologue>
+            <script name="prologue">
+                <objective>Record the agent's QUIC backends.</objective>
+            </script>
+        </prologue>
+        <epilogue>
+            <script name="epilogue">
+                <objective>Finalize the test environment.</objective>
+            </script>
+        </epilogue>
+
+        <run>
+            <package name="connect" />
+        </run>
+        <run>
+            <package name="onwire" />
+        </run>
+    </session>
+</package>

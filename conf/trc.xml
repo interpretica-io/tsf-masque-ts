@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<trc_db unknown_exp_status="passed_ok">
+  <test name="tsf-masque-ts" type="package">
+    <objective>MASQUE proxying verification suite</objective>
+    <notes />
+    <iter result="PASSED">
+      <notes />
+      <test name="connect" type="package">
+        <objective>Establish tunnels through a real proxy and echo a payload</objective>
+        <notes />
+        <iter result="PASSED">
+          <notes />
+          <test name="echo" type="script">
+            <objective>Echo a payload through a MASQUE tunnel</objective>
+            <notes>connect-tcp is skipped, not failed, when the proxy offers no connect-tcp and answers a clean HTTP/3 non-2xx status. The masque-go proxy here implements CONNECT-UDP only, so both backends skip the tcp kind by design; the udp kind must pass.</notes>
+            <iter result="PASSED">
+              <arg name="backend">quiche</arg>
+              <arg name="kind">udp</arg>
+              <notes />
+              <results><result value="PASSED" /></results>
+            </iter>
+            <iter result="SKIPPED">
+              <arg name="backend">quiche</arg>
+              <arg name="kind">tcp</arg>
+              <notes />
+              <results><result value="SKIPPED"><verdict>the proxy does not offer connect-tcp</verdict></result></results>
+            </iter>
+            <iter result="PASSED">
+              <arg name="backend">msquic</arg>
+              <arg name="kind">udp</arg>
+              <notes />
+              <results><result value="PASSED" /></results>
+            </iter>
+            <iter result="SKIPPED">
+              <arg name="backend">msquic</arg>
+              <arg name="kind">tcp</arg>
+              <notes />
+              <results><result value="SKIPPED"><verdict>the proxy does not offer connect-tcp</verdict></result></results>
+            </iter>
+          </test>
+        </iter>
+      </test>
+    </iter>
+  </test>
+</trc_db>

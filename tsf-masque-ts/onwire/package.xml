@@ -1,0 +1,34 @@
+<?xml version="1.0" ?>
+<package version="1.0">
+    <description>MASQUE on the wire (TAD)</description>
+
+    <!-- @page masque-onwire On the wire
+          @objective Prove with TAD that a CONNECT-UDP tunnel carries a
+                     payload end to end: QUIC on the wire to the proxy, and
+                     the exact probe emerging as a UDP datagram to the target.
+    -->
+
+    <author mailto="maxim.menshikov@interpretica.io" />
+
+    <session track_conf="silent">
+        <prologue>
+            <script name="prologue">
+                <objective>Bring the proxy topology up.</objective>
+            </script>
+        </prologue>
+        <epilogue>
+            <script name="epilogue">
+                <objective>Tear the proxy topology down.</objective>
+            </script>
+        </epilogue>
+
+        <run>
+            <script name="datagram">
+                <objective>
+                    Capture the QUIC flow and the decrypted egress datagram
+                    of a CONNECT-UDP tunnel with TAD.
+                </objective>
+            </script>
+        </run>
+    </session>
+</package>

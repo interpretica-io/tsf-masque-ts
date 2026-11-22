@@ -1,0 +1,90 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Interpretica, Unipessoal Lda. All rights reserved.
+#
+# masque-topo up|down - build or tear down the MASQUE proxy topology the
+# tsf-masque suite tests against.
+#
+#   root namespace            |  mqproxy namespace
+#   ----------------------------------------------------
+#   QUIC client (the agent)   |  masque-proxy  10.78.0.2:4433
+#   udp-echo 10.78.0.1:7777   |
+#   tcp-echo 10.78.0.1:7778   |
+#          mqv0 10.78.0.1 <=== veth ===> mqv1 10.78.0.2
+#
+# Both the agent->proxy QUIC flow and the proxy->target decrypted egress
+# cross mqv0, where TAD captures them. Must run as root (the suite calls
+# it through sudo). Exits 2 when the environment cannot host the proxy
+# (no network namespaces, or the proxy binary is missing) so the suite
+# skips rather than fails.
+set -u
+
+NS=mqproxy
+V_ROOT=mqv0
+V_NS=mqv1
+ROOT_IP=10.78.0.1
+PROXY_IP=10.78.0.2
+PFX=24
+CERT=/tmp/masque-cert.pem
+KEY=/tmp/masque-key.pem
+RUN=/tmp/masque-topo
+
+up() {
+    command -v masque-proxy >/dev/null 2>&1 || {
+        echo "masque-topo: masque-proxy binary missing" >&2; exit 2; }
+
+    # A clean slate first - a previous run may have died mid-way.
+    down >/dev/null 2>&1
+
+    ip netns add "$NS" 2>/dev/null || {
+        echo "masque-topo: network namespaces unavailable" >&2; exit 2; }
+
+    ip link add "$V_ROOT" type veth peer name "$V_NS" || exit 1
+    ip link set "$V_NS" netns "$NS"
+    ip addr add "$ROOT_IP/$PFX" dev "$V_ROOT"
+    ip link set "$V_ROOT" up
+    ip link set lo up
+    ip netns exec "$NS" ip addr add "$PROXY_IP/$PFX" dev "$V_NS"
+    ip netns exec "$NS" ip link set "$V_NS" up
+    ip netns exec "$NS" ip link set lo up
+
+    # A short-lived self-signed cert; the client does not verify it.
+    openssl req -x509 -newkey rsa:2048 -nodes -keyout "$KEY" -out "$CERT" \
+        -subj "/CN=$PROXY_IP" -days 2 >/dev/null 2>&1 || {
+        echo "masque-topo: openssl failed" >&2; exit 1; }
+
+    # Echo targets in the root namespace.
+    udp-echo "$ROOT_IP" 7777 >/dev/null 2>&1 & echo $! > "$RUN.udp"
+    tcp-echo "$ROOT_IP" 7778 >/dev/null 2>&1 & echo $! > "$RUN.tcp"
+
+    # The proxy in its namespace.
+    ip netns exec "$NS" masque-proxy -addr "$PROXY_IP:4433" \
+        -cert "$CERT" -key "$KEY" >/tmp/masque-proxy.log 2>&1 &
+    echo $! > "$RUN.proxy"
+
+    sleep 1
+    if ! kill -0 "$(cat "$RUN.proxy")" 2>/dev/null; then
+        echo "masque-topo: proxy failed to start:" >&2
+        cat /tmp/masque-proxy.log >&2
+        exit 1
+    fi
+    echo "masque-topo: up"
+}
+
+down() {
+    for f in proxy udp tcp; do
+        [ -f "$RUN.$f" ] && kill "$(cat "$RUN.$f")" 2>/dev/null
+        rm -f "$RUN.$f"
+    done
+    pkill -f masque-proxy 2>/dev/null
+    ip netns del "$NS" 2>/dev/null
+    ip link del "$V_ROOT" 2>/dev/null
+    rm -f "$CERT" "$KEY"
+    echo "masque-topo: down"
+}
+
+case "${1:-}" in
+    up)   up ;;
+    down) down ;;
+    *)    echo "usage: $0 up|down" >&2; exit 64 ;;
+esac

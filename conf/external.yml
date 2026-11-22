@@ -1,0 +1,10 @@
+repositories:
+  - name: tsf_masque
+    # Local checkout (the parent dir is bind-mounted into the build
+    # container). Swap for the github URL once pushed.
+    url: /Users/mmenshikov/src/midair-platform/tsf-masque
+    ref: main
+    libs:
+      - ta_masque
+      - rpcs_masque
+      - tapi_masque

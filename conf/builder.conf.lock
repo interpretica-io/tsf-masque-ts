@@ -1,0 +1,4 @@
+# External repositories pinned by the Test Environment Builder.
+# Commit this file: it makes the build reproducible.
+# Run dispatcher.sh --update-external to move the records on.
+tsf_masque /Users/mmenshikov/src/midair-platform/tsf-masque main 215f9fabcb99ef48d4cc5b53371bd6d01b2422f8

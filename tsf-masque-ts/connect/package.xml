@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+<package version="1.0">
+    <description>MASQUE tunnels: establish and move payloads</description>
+
+    <!-- @page masque-connect Establish and echo
+          @objective Bring CONNECT-UDP and connect-tcp tunnels up through a
+                     real proxy, over both QUIC backends, and move a payload
+                     through each; plus the negative cases.
+    -->
+
+    <author mailto="maxim.menshikov@interpretica.io" />
+
+    <session track_conf="silent">
+        <prologue>
+            <script name="prologue">
+                <objective>Bring the proxy topology up.</objective>
+            </script>
+        </prologue>
+        <epilogue>
+            <script name="epilogue">
+                <objective>Tear the proxy topology down.</objective>
+            </script>
+        </epilogue>
+
+        <!-- @page masque-connect-echo Establish and echo
+              @objective Establish a tunnel and echo a payload through it. -->
+        <run>
+            <script name="echo">
+                <objective>Echo a payload through a MASQUE tunnel.</objective>
+            </script>
+            <!-- Both QUIC backends are exercised: quiche (its own HTTP/3)
+                 and msquic (hand-rolled HTTP/3 over msquic's QUIC). Both
+                 open CONNECT-UDP end to end against the masque-go proxy. -->
+            <arg name="backend">
+                <value>quiche</value>
+                <value>msquic</value>
+            </arg>
+            <arg name="kind">
+                <value>udp</value>
+                <value>tcp</value>
+            </arg>
+        </run>
+
+        <!-- @page masque-connect-negative Negative cases
+              @objective The cases that must not establish, and the h3-only
+                         control that must. -->
+        <run>
+            <script name="negative">
+                <objective>Negative establishment cases.</objective>
+            </script>
+            <arg name="backend">
+                <value>quiche</value>
+            </arg>
+            <arg name="scenario">
+                <value>bad_proxy</value>
+                <value>tcp_closed</value>
+                <value>h3_only</value>
+            </arg>
+        </run>
+    </session>
+</package>

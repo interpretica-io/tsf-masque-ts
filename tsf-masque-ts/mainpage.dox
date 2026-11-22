@@ -1,0 +1,23 @@
+/** @mainpage
+
+This suite exercises tsf-masque - MASQUE proxying from the Test Agent it
+runs on, against a real MASQUE proxy, over both QUIC backends (quiche and
+msquic), on the data plane and on the wire.
+
+- @ref masque-connect - bring CONNECT-UDP and connect-tcp tunnels up
+  through the proxy and move a payload through each, over quiche and
+  msquic; plus the negative cases (a dead proxy, a closed TCP target) and
+  the h3-only control.
+- @ref masque-onwire - with TAD, prove a CONNECT-UDP tunnel carries a
+  payload end to end: the agent's QUIC packets to the proxy are visible,
+  and the exact probe emerges from the proxy as a plaintext UDP datagram
+  to the target.
+
+The proxy and its UDP/TCP echo targets are brought up by the masque-topo
+helper (in the build image) inside a network namespace joined to the root
+namespace by a veth pair, so both the QUIC flow and the proxy's decrypted
+egress cross one capturable interface. The data plane runs in the agent's
+RPC server through tsf-masque's quiche/msquic backend; when neither
+backend is compiled in, the data-plane tests skip.
+
+*/
